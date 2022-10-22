@@ -143,12 +143,12 @@ while True:
                         db.commit()
                         bot.delete_message(message.chat.id, mess2del)
                         bot.delete_message(message.chat.id, mess2del2)
-                        sql.execute(f'UPDATE users SET mess2del = ?, mess2del2 = ?', (None, None))
+                        sql.execute(f'UPDATE users SET mess2del = ?, mess2del2 = ? WHERE id = {message.from_user.id}', (None, None))
                         db.commit()
                     except:
                         pass
 
-                    sql.execute(f'UPDATE users SET correct_literas = ?, viselica = ?, alphabet = ?, mistakes = ?', ('', words[random.randint(0, len(words)-1)], '', 0))
+                    sql.execute(f'UPDATE users SET correct_literas = ?, viselica = ?, alphabet = ?, mistakes = ? WHERE id = {message.from_user.id}', ('', words[random.randint(0, len(words)-1)], '', 0))
                     db.commit()
 
                     sql.execute(f'SELECT * FROM users WHERE id = {message.from_user.id}')
@@ -215,7 +215,7 @@ while True:
                         db.commit()
                         bot.delete_message(message.chat.id, mess2del)
                         bot.delete_message(message.chat.id, mess2del2)
-                        sql.execute(f'UPDATE users SET mess2del = ?, mess2del2 = ?', (None, None))
+                        sql.execute(f'UPDATE users SET mess2del = ?, mess2del2 = ? WHERE id = {message.from_user.id}', (None, None))
                         db.commit()
                     except:
                         pass
@@ -235,6 +235,7 @@ while True:
 
                     sql.execute(f'UPDATE users SET mess2del = ?, mess2del2 = ? WHERE id = {message.from_user.id}', (mess2del.message_id, mess2del2.message_id))
                     db.commit()
+
                 # else:
                 #     sql.execute(f'UPDATE photos SET description = {message.text} WHERE photo = ""')
                 #     db.commit()
@@ -259,41 +260,40 @@ while True:
                         bot.delete_message(call.message.chat.id, mess2del)
                         bot.delete_message(call.message.chat.id, mess2del2)
 
+                    elif call.data == 'already_used':
+                        bot.answer_callback_query(call.id, '✖️')
+
                     for num in range(0, 34):
                         if call.data == f'{num}':
                             try:
                                 sql.execute(f'SELECT alphabet, viselica, mistakes, correct_literas, mess2del FROM users WHERE id = {call.from_user.id}')
                                 this = sql.fetchone()
+                                db.commit()
                                 alphabet = this[0]
                                 viselica = this[1]
                                 mistakes = this[2]
-                                correct = this[3]
+                                correct_literas = this[3]
                                 mess2del = this[4]
                                 litera = alphabet_liters[num]
                                 continue_game = True
-                                if not litera in alphabet:
-                                    sql.execute(f'UPDATE users SET alphabet = ? WHERE id = {call.from_user.id}', (alphabet + litera,))
-                                    db.commit()
-                                    if litera in viselica:
-                                        sql.execute(f'UPDATE users SET correct_literas = ? WHERE id = {call.from_user.id}', (correct + litera,))
-                                        db.commit()
-                                        bot.answer_callback_query(call.id, '✅')
-                                    else:
-                                        mistakes += 1
-                                        sql.execute(f'UPDATE users SET mistakes = ? WHERE id = {call.from_user.id}', (mistakes,))
-                                        db.commit()
-                                        bot.answer_callback_query(call.id, '🅾️')
 
-                                        if mistakes >= max_mistakes:
-                                            continue_game = False
+                                alphabet = alphabet + litera
+
+                                if litera in viselica:
+                                    correct_literas = correct_literas + litera
+                                    sql.execute(f'UPDATE users SET correct_literas = ?, alphabet = ? WHERE id = {call.from_user.id}', (correct_literas, alphabet))
+                                    db.commit()
+                                    bot.answer_callback_query(call.id, '✅')
+                                else:
+                                    mistakes += 1
+                                    sql.execute(f'UPDATE users SET mistakes = ?, alphabet = ? WHERE id = {call.from_user.id}', (mistakes, alphabet))
+                                    db.commit()
+                                    bot.answer_callback_query(call.id, '🅾️')
+
+                                    if mistakes >= max_mistakes:
+                                        continue_game = False
                                 
                                 if continue_game:
-                                    sql.execute(f'SELECT viselica, correct_literas FROM users WHERE id = {call.from_user.id}')
-                                    this = sql.fetchone()
-                                    viselica = this[0]
-                                    correct_literas = this[1]
-                                    db.commit()
-
                                     word = ''
                                     for lit in viselica:
                                         if lit in correct_literas:
@@ -301,10 +301,6 @@ while True:
                                         else:
                                             word += '||\_|| '
                                     if '_' in word:
-                                        sql.execute(f'SELECT alphabet FROM users WHERE id = {call.from_user.id}')
-                                        alphabet = sql.fetchone()[0]
-                                        db.commit()
-
                                         photo = viselica_photos[mistakes]
 
                                         markup = types.InlineKeyboardMarkup(row_width=8)
@@ -449,9 +445,9 @@ while True:
                                         try:
                                             sql.execute(f'SELECT mess2del, mess2del2 FROM users WHERE id = {call.from_user.id}')
                                             this = sql.fetchone()
+                                            db.commit()
                                             mess2del = this[0]
                                             mess2del2 = this[1]
-                                            db.commit()
                                             bot.delete_message(call.message.chat.id, mess2del)
                                             bot.delete_message(call.message.chat.id, mess2del2)
                                         except:
