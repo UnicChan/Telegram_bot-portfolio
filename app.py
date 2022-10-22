@@ -455,10 +455,12 @@ while True:
                                             pass
 
                                         bot.send_photo(call.message.chat.id, winner_photo, f'🔋Слово: *{viselica}*\n\n🥳Поздравляю, ты отгадал слово!\nПромокод *10%* на первый заказ: `LIKE`', parse_mode='Markdown')
+                                        print(correct_username(call) + ' выиграл')
                                 else:
                                     photo = viselica_photos[10]
                                     bot.edit_message_media(types.InputMediaPhoto(photo), call.message.chat.id, mess2del)
                                     bot.edit_message_caption(f'🪫Слово: ||{viselica}||\n\n🥲Ты проиграл\. Попробуй ещё раз\!', call.message.chat.id, mess2del, parse_mode='MarkdownV2')
+                                    print(correct_username(call) + ' проиграл')
                             except:
                                 bot.answer_callback_query(call.id, '🤯Не так быстро, пожалуйста', show_alert=True)
 
